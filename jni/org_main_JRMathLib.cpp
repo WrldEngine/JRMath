@@ -1,10 +1,13 @@
 #include "org_main_JRMathLib.h"
+#include "gpu/gpuOperators.h"
 #include <cmath>
+#include <vector>
+#include <iostream>
 
 JNIEXPORT jdouble JNICALL Java_org_main_JRMathLib_CMathExp
   (JNIEnv *env, jclass clazz, jdouble x)
 {
-    return std::exp( x );
+    return std::exp(x);
 }
 
 JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_SumArrays
@@ -16,13 +19,43 @@ JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_SumArrays
     jint *barr = env->GetIntArrayElements(b, NULL);
 
     jintArray resultArray = env->NewIntArray(size);
-    jint *rarr = env->GetIntArrayElements(resultArray, NULL);
+    OpenCLKernelsOperator g;
 
-    for (int i = 0; i < size; i++) {
-        rarr[i] = aarr[i] + barr[i];
-    };
+    std::vector<int> a_to_vec(size);
+    std::vector<int> b_to_vec(size);
 
-    env->ReleaseIntArrayElements(resultArray, rarr, NULL);
+    env->GetIntArrayRegion(a, jsize{0}, size, &a_to_vec[0]);
+    env->GetIntArrayRegion(b, jsize{0}, size, &b_to_vec[0]);
+
+    std::vector<int> result = g.sumArrays(a_to_vec, b_to_vec);
+
+    env->SetIntArrayRegion(resultArray, 0, result.size(), reinterpret_cast<const jint*>(result.data()));
+    env->ReleaseIntArrayElements(a, aarr, NULL);
+    env->ReleaseIntArrayElements(b, barr, NULL);
+
+    return resultArray;
+}
+
+JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_MulArrays
+  (JNIEnv *env, jclass, jintArray a, jintArray b)
+{
+    jsize size = env->GetArrayLength(a);
+
+    jint *aarr = env->GetIntArrayElements(a, NULL);
+    jint *barr = env->GetIntArrayElements(b, NULL);
+
+    jintArray resultArray = env->NewIntArray(size);
+    OpenCLKernelsOperator g;
+
+    std::vector<int> a_to_vec(size);
+    std::vector<int> b_to_vec(size);
+
+    env->GetIntArrayRegion(a, jsize{0}, size, &a_to_vec[0]);
+    env->GetIntArrayRegion(b, jsize{0}, size, &b_to_vec[0]);
+
+    std::vector<int> result = g.mulArrays(a_to_vec, b_to_vec);
+
+    env->SetIntArrayRegion(resultArray, 0, result.size(), reinterpret_cast<const jint*>(result.data()));
     env->ReleaseIntArrayElements(a, aarr, NULL);
     env->ReleaseIntArrayElements(b, barr, NULL);
 

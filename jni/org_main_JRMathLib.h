@@ -23,6 +23,14 @@ JNIEXPORT jdouble JNICALL Java_org_main_JRMathLib_CMathExp
 JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_SumArrays
   (JNIEnv *, jclass, jintArray, jintArray);
 
+/*
+ * Class:     org_main_JRMathLib
+ * Method:    MulArrays
+ * Signature: ([I[I)[I
+ */
+JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_MulArrays
+  (JNIEnv *, jclass, jintArray, jintArray);
+
 #ifdef __cplusplus
 }
 #endif
