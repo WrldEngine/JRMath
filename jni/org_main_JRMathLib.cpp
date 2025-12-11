@@ -107,5 +107,5 @@ JNIEXPORT void JNICALL Java_org_main_JRMathLib_MatMulBuffers
     }
 
     OpenCLKernelsOperator g;
-    g.matMulArraysRaw(a, b, r, N);
+    g.matMulArraysRaw(a, b, r, n, m, k);
 }
