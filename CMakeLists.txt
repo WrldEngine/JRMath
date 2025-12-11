@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCE_FILES 
-    jni/org_main_JRMathLib.cpp
-    jni/gpu/gpuOperators.cpp
+    org_main_JRMathLib.cpp
+    gpu/gpuOperators.cpp
 )
 
 add_library(jnimathlib SHARED ${SOURCE_FILES})
