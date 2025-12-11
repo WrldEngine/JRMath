@@ -31,6 +31,30 @@ JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_SumArrays
 JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_MulArrays
   (JNIEnv *, jclass, jintArray, jintArray);
 
+/*
+ * Class:     org_main_JRMathLib
+ * Method:    SumBuffers
+ * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;I)V
+ */
+JNIEXPORT void JNICALL Java_org_main_JRMathLib_SumBuffers
+  (JNIEnv *, jclass, jobject, jobject, jobject, jint);
+
+/*
+ * Class:     org_main_JRMathLib
+ * Method:    MulBuffers
+ * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;I)V
+ */
+JNIEXPORT void JNICALL Java_org_main_JRMathLib_MulBuffers
+  (JNIEnv *, jclass, jobject, jobject, jobject, jint);
+
+/*
+ * Class:     org_main_JRMathLib
+ * Method:    MatMulBuffers
+ * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;III)V
+ */
+JNIEXPORT void JNICALL Java_org_main_JRMathLib_MatMulBuffers
+  (JNIEnv *, jclass, jobject, jobject, jobject, jint, jint, jint);
+
 #ifdef __cplusplus
 }
 #endif

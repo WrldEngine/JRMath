@@ -13,6 +13,9 @@ class OpenCLKernelsOperator {
     OpenCLKernelsOperator();
     std::vector<int> sumArrays(const std::vector<int>& a, const std::vector<int>& b);
     std::vector<int> mulArrays(const std::vector<int>& a, const std::vector<int>& b);
+    void sumArraysRaw(const int* a, const int* b, int* r, int n);
+    void mulArraysRaw(const int* a, const int* b, int* r, int n);
+    void matMulArraysRaw(const float* a, const float* b, float* r, int n, int m, int k);
 };
 
 class CUDAKernelsOperator {};

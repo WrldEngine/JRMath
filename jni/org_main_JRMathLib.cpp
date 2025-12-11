@@ -61,3 +61,51 @@ JNIEXPORT jintArray JNICALL Java_org_main_JRMathLib_MulArrays
 
     return resultArray;
 }
+
+JNIEXPORT void JNICALL Java_org_main_JRMathLib_SumBuffers
+  (JNIEnv *env, jclass, jobject bufA, jobject bufB, jobject bufR, jint N)
+{
+    int* a = (int*) env->GetDirectBufferAddress(bufA);
+    int* b = (int*) env->GetDirectBufferAddress(bufB);
+    int* r = (int*) env->GetDirectBufferAddress(bufR);
+
+    if (!a || !b || !r) {
+        fprintf(stderr, "SumBuffers: direct buffer address is null\n");
+        return;
+    }
+
+    OpenCLKernelsOperator g;
+    g.sumArraysRaw(a, b, r, N);
+}
+
+JNIEXPORT void JNICALL Java_org_main_JRMathLib_MulBuffers
+  (JNIEnv *env, jclass, jobject bufA, jobject bufB, jobject bufR, jint N)
+{
+    int* a = (int*) env->GetDirectBufferAddress(bufA);
+    int* b = (int*) env->GetDirectBufferAddress(bufB);
+    int* r = (int*) env->GetDirectBufferAddress(bufR);
+
+    if (!a || !b || !r) {
+        fprintf(stderr, "MulBuffers: direct buffer address is null\n");
+        return;
+    }
+
+    OpenCLKernelsOperator g;
+    g.mulArraysRaw(a, b, r, N);
+}
+
+JNIEXPORT void JNICALL Java_org_main_JRMathLib_MatMulBuffers
+  (JNIEnv *env, jclass, jobject bufA, jobject bufB, jobject bufR, jint n, jint m, jint k)
+{
+    float* a = (float*) env->GetDirectBufferAddress(bufA);
+    float* b = (float*) env->GetDirectBufferAddress(bufB);
+    float* r = (float*) env->GetDirectBufferAddress(bufR);
+
+    if (!a || !b || !r) {
+        fprintf(stderr, "MatMulBuffers: direct buffer address is null\n");
+        return;
+    }
+
+    OpenCLKernelsOperator g;
+    g.matMulArraysRaw(a, b, r, N);
+}

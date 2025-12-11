@@ -208,7 +208,7 @@ std::vector<int> OpenCLKernelsOperator::sumArrays(const std::vector<int>& a, con
     )
     {
         int idx = get_global_id(0);
-        if (idx > size) {
+        if (idx >= size) {
             return;
         }
         res[idx] = vec_a[idx] + vec_b[idx];
@@ -273,7 +273,7 @@ std::vector<int> OpenCLKernelsOperator::sumArrays(const std::vector<int>& a, con
 std::vector<int> OpenCLKernelsOperator::mulArrays(const std::vector<int>& a, const std::vector<int>& b) {
     assert_sz(a, b)
 
-        int arr_sz = a.size();
+    int arr_sz = a.size();
     std::vector<int> result(arr_sz);
 
     std::string source_str = R"==(
@@ -294,10 +294,8 @@ std::vector<int> OpenCLKernelsOperator::mulArrays(const std::vector<int>& a, con
     const char* source_c_str = source_str.c_str();
     const size_t source_size = source_str.size();
 
-    cl_program program = clCreateProgramWithSource(this->context, 1, (const char**)&source_c_str,
-                                                   (const size_t*)&source_size, &this->ret);
+    cl_program program = clCreateProgramWithSource(this->context, 1, (const char**)&source_c_str, (const size_t*)&source_size, &this->ret);
     clErrchk(this->ret);
-
     cl_mem vec_a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, arr_sz * sizeof(int), NULL, &this->ret);
     clErrchk(this->ret);
     cl_mem vec_b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, arr_sz * sizeof(int), NULL, &this->ret);
@@ -329,9 +327,7 @@ std::vector<int> OpenCLKernelsOperator::mulArrays(const std::vector<int>& a, con
     }
 
     clErrchk(clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL));
-
-    clErrchk(clEnqueueReadBuffer(this->command_queue, res_mem_obj, CL_TRUE, 0, arr_sz * sizeof(float), result.data(), 0,
-                                 NULL, NULL));
+    clErrchk(clEnqueueReadBuffer(this->command_queue, res_mem_obj, CL_TRUE, 0, arr_sz * sizeof(float), result.data(), 0, NULL, NULL));
 
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
@@ -345,3 +341,142 @@ std::vector<int> OpenCLKernelsOperator::mulArrays(const std::vector<int>& a, con
 
     return result;
 }
+
+void OpenCLKernelsOperator::sumArraysRaw(const int* a, const int* b, int* r, int n)
+{
+    int arr_sz = n;
+
+    std::string source_str = R"==(
+    __kernel void sum_vectors(
+        __global const int *vec_a,
+        __global const int *vec_b,
+        __global int *res,
+        const int size
+    )
+    {
+        int idx = get_global_id(0);
+        if (idx >= size) {
+            return;
+        }
+        res[idx] = vec_a[idx] + vec_b[idx];
+    })==";
+
+    const char* source_c_str = source_str.c_str();
+    const size_t source_size = source_str.size();
+
+    cl_program program = clCreateProgramWithSource(this->context, 1, (const char**)&source_c_str, (const size_t*)&source_size, &this->ret);
+    clErrchk(this->ret);
+
+    cl_mem vec_a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, n * sizeof(int), (void*)a, &ret);
+    clErrchk(this->ret);
+    cl_mem vec_b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, n * sizeof(int), (void*)b, &ret);
+    clErrchk(this->ret);
+    cl_mem res_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, arr_sz * sizeof(int), NULL, &this->ret);
+    clErrchk(this->ret);
+
+    clErrchk(clBuildProgram(program, 1, &this->dv_id, NULL, NULL, NULL));
+
+    cl_kernel kernel = clCreateKernel(program, "sum_vectors", &this->ret);
+    clErrchk(this->ret);
+
+    clErrchk(clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&vec_a_mem_obj));
+    clErrchk(clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&vec_b_mem_obj));
+    clErrchk(clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&res_mem_obj));
+    clErrchk(clSetKernelArg(kernel, 3, sizeof(const int), (void*)&arr_sz));
+
+    size_t local_size = 256;
+    size_t global_size = ((arr_sz + local_size - 1) / local_size) * local_size;
+
+    clErrchk(clEnqueueNDRangeKernel(this->command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL));
+    clErrchk(clEnqueueReadBuffer(this->command_queue, res_mem_obj, CL_TRUE, 0, arr_sz * sizeof(int), r, 0, NULL, NULL));
+
+    ret = clFlush(this->command_queue);
+    ret = clFinish(this->command_queue);
+    ret = clReleaseKernel(kernel);
+    ret = clReleaseProgram(program);
+    ret = clReleaseMemObject(vec_a_mem_obj);
+    ret = clReleaseMemObject(vec_b_mem_obj);
+    ret = clReleaseMemObject(res_mem_obj);
+}
+
+void OpenCLKernelsOperator::mulArraysRaw(const int* a, const int* b, int* r, int n)
+{
+    int arr_sz = n;
+
+    std::string source_str = R"==(
+    __kernel void mul_vectors(
+        __global const int *vec_a,
+        __global const int *vec_b,
+        __global int *res,
+        const int size
+    )
+    {
+        int idx = get_global_id(0);
+        if (idx >= size) {
+            return;
+        }
+        res[idx] = vec_a[idx] * vec_b[idx];
+    })==";
+
+    const char* source_c_str = source_str.c_str();
+    const size_t source_size = source_str.size();
+
+    cl_program program = clCreateProgramWithSource(this->context, 1, (const char**)&source_c_str, (const size_t*)&source_size, &this->ret);
+    clErrchk(this->ret);
+
+    cl_mem vec_a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, n * sizeof(int), (void*)a, &ret);
+    clErrchk(this->ret);
+    cl_mem vec_b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, n * sizeof(int), (void*)b, &ret);
+    clErrchk(this->ret);
+    cl_mem res_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, arr_sz * sizeof(int), NULL, &this->ret);
+    clErrchk(this->ret);
+
+    clErrchk(clBuildProgram(program, 1, &this->dv_id, NULL, NULL, NULL));
+
+    cl_kernel kernel = clCreateKernel(program, "mul_vectors", &this->ret);
+    clErrchk(this->ret);
+
+    clErrchk(clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&vec_a_mem_obj));
+    clErrchk(clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&vec_b_mem_obj));
+    clErrchk(clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&res_mem_obj));
+    clErrchk(clSetKernelArg(kernel, 3, sizeof(const int), (void*)&arr_sz));
+
+    size_t local_size = 256;
+    size_t global_size = ((arr_sz + local_size - 1) / local_size) * local_size;
+
+    clErrchk(clEnqueueNDRangeKernel(this->command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL));
+    clErrchk(clEnqueueReadBuffer(this->command_queue, res_mem_obj, CL_TRUE, 0, arr_sz * sizeof(int), r, 0, NULL, NULL));
+
+    ret = clFlush(this->command_queue);
+    ret = clFinish(this->command_queue);
+    ret = clReleaseKernel(kernel);
+    ret = clReleaseProgram(program);
+    ret = clReleaseMemObject(vec_a_mem_obj);
+    ret = clReleaseMemObject(vec_b_mem_obj);
+    ret = clReleaseMemObject(res_mem_obj);
+}
+
+void OpenCLKernelsOperator::matMulArraysRaw(const float* a, const float* b, float* r, int n, int m, int k) {
+    std::string source_str = R"==(
+    __kernel void matmul(
+        __global const float *A,
+        __global const float *B,
+        __global float *C,
+        const int M, const int K, const int N
+    ) {
+        int row = get_global_id(0);
+        int col = get_global_id(1);
+
+        if (row >= M || col >= N) return;
+
+        float sum = 0.0f;
+        for (int k = 0; k < K; k++) {
+            sum += A[row * K + k] * B[k * N + col];
+        }
+
+        C[row * N + col] = sum;
+    })==";
+
+    const char* source_c_str = source_str.c_str();
+    const size_t source_size = source_str.size();
+};
